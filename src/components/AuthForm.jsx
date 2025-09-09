@@ -20,33 +20,22 @@ const AuthForm = () => {
     setIsLogin((prev) => !prev);
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    const enteredEmail = emailInputRef.current.value;
-    const enteredPassword = passwordInputRef.current.value;
-    const enteredConfirmPassword = confirmPasswordRef.current?.value;
-
-    if (!isLogin && enteredPassword !== enteredConfirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-
+  // 🔹 Login handler
+  const loginHandler = (email, password) => {
     setIsLoading(true);
 
-    const url = isLogin
-      ? `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_KEY}`
-      : `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`;
-
-    fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        email: enteredEmail,
-        password: enteredPassword,
-        returnSecureToken: true,
-      }),
-      headers: { "Content-Type": "application/json" },
-    })
+    fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_KEY}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          returnSecureToken: true,
+        }),
+        headers: { "Content-Type": "application/json" },
+      }
+    )
       .then(async (res) => {
         setIsLoading(false);
         if (!res.ok) {
@@ -57,12 +46,60 @@ const AuthForm = () => {
       })
       .then((data) => {
         authCtx.login(data.idToken, data.localId);
-        // console.log(data)
         navigate("/welcome", { replace: true });
       })
-      .catch((err) => {
-        alert(err.message);
-      });
+      .catch((err) => alert(err.message));
+  };
+
+  // 🔹 Signup handler
+  const signupHandler = (email, password, confirmPassword) => {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    setIsLoading(true);
+
+    fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          returnSecureToken: true,
+        }),
+        headers: { "Content-Type": "application/json" },
+      }
+    )
+      .then(async (res) => {
+        setIsLoading(false);
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error.message);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        authCtx.login(data.idToken, data.localId);
+        navigate("/welcome", { replace: true });
+      })
+      .catch((err) => alert(err.message));
+  };
+
+  // 🔹 Decide which function to call
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const enteredEmail = emailInputRef.current.value;
+    const enteredPassword = passwordInputRef.current.value;
+    const enteredConfirmPassword = confirmPasswordRef.current?.value;
+
+    if (isLogin) {
+      loginHandler(enteredEmail, enteredPassword);
+    } else {
+      signupHandler(enteredEmail, enteredPassword, enteredConfirmPassword);
+    }
 
     // Reset fields
     emailInputRef.current.value = "";
@@ -85,7 +122,12 @@ const AuthForm = () => {
         {!isLogin && (
           <div className={classes.control}>
             <label htmlFor="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" ref={confirmPasswordRef} required />
+            <input
+              type="password"
+              id="confirmPassword"
+              ref={confirmPasswordRef}
+              required
+            />
           </div>
         )}
 
