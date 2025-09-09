@@ -22,6 +22,7 @@ const Expenses = () => {
       })
       .then((data) => {
         if (!data) return setExpenses([]);
+        console.log("Fetched expenses from Firebase:", data);
         const loaded = Object.entries(data).map(([key, value]) => ({
           id: key,
           ...value,
@@ -39,56 +40,63 @@ const Expenses = () => {
   };
 
   // Add or Edit Expense
-  const submitHandler = (e) => {
-    e.preventDefault();
-    if (!money || !description) return alert("Please fill all fields");
+const submitHandler = (e) => {
+  e.preventDefault();
+  if (!money || !description) return alert("Please fill all fields");
 
-    const expenseData = { money, description, category };
-
-    if (editId) {
-      // Edit existing expense (PUT)
-      fetch(
-        `https://expense-tracker-react-875b9-default-rtdb.firebaseio.com/expenses/${authCtx.userId}/${editId}.json?auth=${authCtx.token}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(expenseData),
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to update expense");
-          return res.json();
-        })
-        .then(() => {
-          setExpenses((prev) =>
-            prev.map((exp) => (exp.id === editId ? { id: editId, ...expenseData } : exp))
-          );
-          console.log("Expense successfully updated");
-          resetForm();
-        })
-        .catch((err) => alert(err.message));
-    } else {
-      // Add new expense (POST)
-      fetch(
-        `https://expense-tracker-react-875b9-default-rtdb.firebaseio.com/expenses/${authCtx.userId}.json?auth=${authCtx.token}`,
-        {
-          method: "POST",
-          body: JSON.stringify(expenseData),
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to add expense");
-          return res.json();
-        })
-        .then((data) => {
-          setExpenses((prev) => [{ id: data.name, ...expenseData }, ...prev]);
-          console.log("Expense successfully added");
-          resetForm();
-        })
-        .catch((err) => alert(err.message));
-    }
+  const expenseData = { 
+    money: +money, 
+    description, 
+    category 
   };
+
+  if (editId) {
+    // 🔹 Update existing expense
+    fetch(
+      `https://expense-tracker-react-875b9-default-rtdb.firebaseio.com/expenses/${authCtx.userId}/${editId}.json?auth=${authCtx.token}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(expenseData),
+        headers: { "Content-Type": "application/json" },
+      }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to update expense");
+        return res.json();
+      })
+      .then(() => {
+        setExpenses((prev) =>
+          prev.map((exp) =>
+            exp.id === editId ? { id: editId, ...expenseData } : exp
+          )
+        );
+        resetForm();
+      })
+      .catch((err) => alert(err.message));
+  } else {
+    // 🔹 Add new expense
+    fetch(
+      `https://expense-tracker-react-875b9-default-rtdb.firebaseio.com/expenses/${authCtx.userId}.json?auth=${authCtx.token}`,
+      {
+        method: "POST",
+        body: JSON.stringify(expenseData),
+        headers: { "Content-Type": "application/json" },
+      }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to add expense");
+        return res.json();
+      })
+      .then((data) => {
+        setExpenses((prev) => [
+          { id: data.name, ...expenseData },
+          ...prev,
+        ]);
+        resetForm();
+      })
+      .catch((err) => alert(err.message));
+  }
+};
 
   // Delete expense
   const deleteHandler = (id) => {

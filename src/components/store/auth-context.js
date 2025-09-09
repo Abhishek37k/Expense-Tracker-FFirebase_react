@@ -26,27 +26,28 @@ export const AuthContextProvider = (props) => {
     timerRef.current = null;
   };
 
-const loginHandler = (newToken, userId) => {
-  const expiryAt = Date.now() + EXP_MS;
-  localStorage.setItem("token", newToken);
-  localStorage.setItem("userId", userId);
-  localStorage.setItem("tokenExpiry", String(expiryAt));
-  setToken(newToken);
-  setUserId(userId);
-  clearTimer();
-  timerRef.current = setTimeout(() => logoutHandler(), EXP_MS);
+  const loginHandler = (newToken, userId) => {
+    const expiryAt = Date.now() + EXP_MS;
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("tokenExpiry", String(expiryAt));
+    setToken(newToken);
+    setUserId(userId);
+    clearTimer();
+    timerRef.current = setTimeout(() => logoutHandler(), EXP_MS);
 
-  console.log("✅ User logged in, token stored"); // log added
-};
+    console.log("✅ User logged in, token stored"); // log added
+  };
 
-const logoutHandler = () => {
-  clearTimer();
-  setToken(null);
-  localStorage.removeItem("token");
-  localStorage.removeItem("tokenExpiry");
-  console.log("🚪 User logged out"); // log added
-  navigate("/", { replace: true });
-};
+  const logoutHandler = () => {
+    clearTimer();
+    setToken(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("tokenExpiry");
+    localStorage.removeItem("userId");
+    console.log("🚪 User logged out"); // log added
+    navigate("/", { replace: true });
+  };
 
   useEffect(() => {
     const expiry = Number(localStorage.getItem("tokenExpiry") || 0);
@@ -64,7 +65,7 @@ const logoutHandler = () => {
 
   const contextValue = {
     token,
-      userId: userId,
+    userId: userId,
     isLoggedIn: userIsLoggedIn,
     login: loginHandler,
     logout: logoutHandler,
